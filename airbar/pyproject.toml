@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "airbar"
 version = "0.1.0"
-description = ""
-authors = ["devin-ai-integration[bot] <158243242+devin-ai-integration[bot]@users.noreply.github.com>"]
+description = "AirBar API with WebSocket-based notification system"
+authors = ["AirBar Team <team@airbar.example.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]

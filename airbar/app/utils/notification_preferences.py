@@ -8,21 +8,25 @@ from ..models.notification_preferences import NotificationPreference as Preferen
 class NotificationPreferencesManager:
     """Manager for handling notification preferences."""
 
-    @staticmethod
-    async def get_preferences(user_id: str) -> PreferenceModel:
+    def __init__(self, prisma_client=None):
+        """Initialize the manager with a Prisma client."""
+        if not prisma_client:
+            raise ValueError("Prisma client is required")
+        self.prisma = prisma_client
+
+    async def get_preferences(self, user_id: str) -> PreferenceModel:
         """Get notification preferences for a user."""
-        prefs = await NotificationPreference.prisma().find_unique(
+        prefs = await self.prisma.notification_preference.find_unique(
             where={"user_id": user_id}
         )
         if not prefs:
             return PreferenceModel(user_id=user_id)
         return PreferenceModel.model_validate(prefs)
 
-    @staticmethod
-    async def update_preferences(user_id: str, preferences: PreferenceModel) -> PreferenceModel:
+    async def update_preferences(self, user_id: str, preferences: PreferenceModel) -> PreferenceModel:
         """Update notification preferences for a user."""
         try:
-            prefs = await NotificationPreference.prisma().upsert(
+            prefs = await self.prisma.notification_preference.upsert(
                 where={"user_id": user_id},
                 data={
                     "create": preferences.model_dump(),
@@ -63,13 +67,12 @@ class NotificationPreferencesManager:
 
         return True
 
-    @staticmethod
-    async def mute_notifications(user_id: str, duration_minutes: int) -> PreferenceModel:
+    async def mute_notifications(self, user_id: str, duration_minutes: int) -> PreferenceModel:
         """Temporarily mute notifications for a user."""
         if duration_minutes < 0:
             raise HTTPException(status_code=400, detail="Duration must be positive")
 
         muted_until = datetime.now() + timedelta(minutes=duration_minutes)
-        prefs = await NotificationPreferencesManager.get_preferences(user_id)
+        prefs = await self.get_preferences(user_id)
         prefs.muted_until = muted_until
-        return await NotificationPreferencesManager.update_preferences(user_id, prefs)
+        return await self.update_preferences(user_id, prefs)

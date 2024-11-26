@@ -5,12 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 from app.websocket.notification_handler import NotificationConnectionManager
 
 @pytest.fixture
-def connection_manager():
-    """Create a connection manager instance."""
-    return NotificationConnectionManager()
-
-@pytest.fixture
-def mock_websocket():
+async def mock_websocket():
     """Create a mock WebSocket connection."""
     websocket = AsyncMock(spec=WebSocket)
     websocket.send_json = AsyncMock()
@@ -50,18 +45,19 @@ async def test_broadcast(connection_manager, mock_websocket):
     test_message = {"type": "broadcast", "content": "Hello all"}
 
     # Connect multiple users
+    websockets = []
     for user_id in user_ids:
         websocket = AsyncMock(spec=WebSocket)
         websocket.send_json = AsyncMock()
+        websockets.append(websocket)
         await connection_manager.connect(websocket, user_id)
 
     # Broadcast message
     await connection_manager.broadcast(test_message)
 
     # Verify all connections received the message
-    for user_id in user_ids:
-        for connection in connection_manager.active_connections[user_id]:
-            connection.send_json.assert_called_once_with(test_message)
+    for websocket in websockets:
+        websocket.send_json.assert_called_once_with(test_message)
 
 @pytest.mark.asyncio
 async def test_handle_disconnection(connection_manager, mock_websocket):

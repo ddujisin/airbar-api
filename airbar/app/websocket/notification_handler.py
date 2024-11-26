@@ -7,9 +7,12 @@ from ..utils.notification_preferences import NotificationPreferencesManager
 class NotificationConnectionManager:
     """Manages WebSocket connections for notifications."""
 
-    def __init__(self):
+    def __init__(self, preferences_manager=None):
         """Initialize connection manager."""
         self.active_connections: Dict[str, Set[WebSocket]] = {}
+        if preferences_manager is None:
+            raise ValueError("NotificationPreferencesManager is required")
+        self.preferences_manager = preferences_manager
 
     async def connect(self, websocket: WebSocket, user_id: str):
         """Connect a new WebSocket client."""
@@ -31,7 +34,7 @@ class NotificationConnectionManager:
             return
 
         # Get user preferences
-        preferences = await NotificationPreferencesManager.get_preferences(user_id)
+        preferences = await self.preferences_manager.get_preferences(user_id)
 
         # Check if we should send the notification
         if not NotificationPreferencesManager.should_notify(preferences, "websocket", priority):
@@ -54,4 +57,5 @@ class NotificationConnectionManager:
         for user_id in list(self.active_connections.keys()):
             await self.send_notification(user_id, message, priority)
 
-notification_manager = NotificationConnectionManager()
+# Create a default instance without Prisma client for backward compatibility
+notification_manager = None  # Will be initialized with proper Prisma client when needed

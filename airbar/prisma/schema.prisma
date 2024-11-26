@@ -1,0 +1,38 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider             = "prisma-client-py"
+  interface           = "asyncio"
+  recursive_type_depth = 5
+}
+
+model NotificationPreference {
+  id               Int       @id @default(autoincrement())
+  userId           String    @unique
+  enabled          Boolean   @default(true)
+  channels         String[]  @default(["websocket"])
+  quietHoursStart  DateTime?
+  quietHoursEnd    DateTime?
+  mutedUntil       DateTime?
+  priorityThreshold Int      @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@map("notification_preferences")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  type      String
+  message   String
+  priority  Int      @default(0)
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notifications")
+}

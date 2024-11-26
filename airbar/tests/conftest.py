@@ -1,8 +1,10 @@
 """Test configuration and fixtures."""
 import pytest
 import asyncio
+from fastapi import WebSocket
+from unittest.mock import AsyncMock
 from prisma import Prisma
-from app.websocket.notification_handler import notification_manager
+from app.websocket.notification_handler import NotificationConnectionManager
 from app.utils.notification_preferences import NotificationPreferencesManager
 
 @pytest.fixture(scope="session")
@@ -17,8 +19,10 @@ async def prisma_client():
     """Initialize Prisma client for tests."""
     client = Prisma()
     await client.connect()
-    yield client
-    await client.disconnect()
+    try:
+        yield client
+    finally:
+        await client.disconnect()
 
 @pytest.fixture(autouse=True)
 async def setup_test_database(prisma_client):
@@ -28,3 +32,25 @@ async def setup_test_database(prisma_client):
     yield
     # Cleanup after test
     await prisma_client.notification_preference.delete_many()
+
+@pytest.fixture
+def test_user():
+    """Create test user ID."""
+    return "test_user_123"
+
+@pytest.fixture
+async def mock_websocket():
+    """Create mock WebSocket instance."""
+    mock = AsyncMock(spec=WebSocket)
+    mock.send_json = AsyncMock()
+    return mock
+
+@pytest.fixture
+async def preferences_manager(prisma_client):
+    """Create NotificationPreferencesManager instance."""
+    return NotificationPreferencesManager(prisma_client)
+
+@pytest.fixture
+async def connection_manager(preferences_manager):
+    """Create NotificationConnectionManager instance."""
+    return NotificationConnectionManager(preferences_manager)
