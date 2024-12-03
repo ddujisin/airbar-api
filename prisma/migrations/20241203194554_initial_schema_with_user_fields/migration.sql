@@ -10,6 +10,7 @@ CREATE TABLE "User" (
     "address" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
 
@@ -17,9 +18,10 @@ CREATE TABLE "User" (
 CREATE TABLE "Session" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
-    "token" TEXT NOT NULL,
+    "accessToken" TEXT NOT NULL,
     "expiresAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
     CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
 );
 
@@ -32,6 +34,7 @@ CREATE TABLE "MenuItem" (
     "available" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+
     CONSTRAINT "MenuItem_pkey" PRIMARY KEY ("id")
 );
 
@@ -45,6 +48,7 @@ CREATE TABLE "Order" (
     "totalPrice" DOUBLE PRECISION NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+
     CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
 );
 
@@ -52,7 +56,7 @@ CREATE TABLE "Order" (
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Session_token_key" ON "Session"("token");
+CREATE UNIQUE INDEX "Session_accessToken_key" ON "Session"("accessToken");
 
 -- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
