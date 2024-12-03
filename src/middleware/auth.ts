@@ -34,7 +34,7 @@ export const authenticateToken = async (
   try {
     const decoded = jwt.verify(accessToken, process.env.JWT_SECRET!) as TokenPayload;
     const session = await prisma.session.findUnique({
-      where: { token: accessToken },
+      where: { accessToken },
       include: { user: true }
     });
 

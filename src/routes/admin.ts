@@ -8,9 +8,9 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 // Host registration
-router.post('/register', async (req, res) => {
+router.post('/api/register', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, name, phone, address } = req.body;
 
     const existingUser = await prisma.user.findUnique({
       where: { email }
@@ -25,7 +25,10 @@ router.post('/register', async (req, res) => {
       data: {
         email,
         password: hashedPassword,
-        role: 'ADMIN'
+        role: 'ADMIN',
+        name: name || null,
+        phone: phone || null,
+        address: address || null
       }
     });
 
@@ -37,7 +40,7 @@ router.post('/register', async (req, res) => {
 });
 
 // Super-admin routes
-router.get('/hosts', authenticateToken, requireSuperAdmin, async (req, res) => {
+router.get('/api/hosts', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const hosts = await prisma.user.findMany({
       where: {
@@ -59,7 +62,7 @@ router.get('/hosts', authenticateToken, requireSuperAdmin, async (req, res) => {
 });
 
 // Impersonate host
-router.post('/impersonate/:hostId', authenticateToken, requireSuperAdmin, async (req, res) => {
+router.post('/api/impersonate/:hostId', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { hostId } = req.params;
     const superAdminId = req.user!.userId;
@@ -76,7 +79,7 @@ router.post('/impersonate/:hostId', authenticateToken, requireSuperAdmin, async 
       return res.status(404).json({ error: 'Host not found' });
     }
 
-    const token = jwt.sign(
+    const accessToken = jwt.sign(
       {
         userId: host.id,
         role: host.role,
@@ -89,13 +92,13 @@ router.post('/impersonate/:hostId', authenticateToken, requireSuperAdmin, async 
 
     const session = await prisma.session.create({
       data: {
-        token,
+        accessToken,
         userId: host.id,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
       }
     });
 
-    res.json({ token });
+    res.json({ accessToken });
   } catch (error) {
     console.error('Error impersonating host:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -103,7 +106,7 @@ router.post('/impersonate/:hostId', authenticateToken, requireSuperAdmin, async 
 });
 
 // Delete host
-router.delete('/hosts/:hostId', authenticateToken, requireSuperAdmin, async (req, res) => {
+router.delete('/api/hosts/:hostId', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { hostId } = req.params;
 
