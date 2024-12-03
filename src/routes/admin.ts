@@ -7,40 +7,8 @@ import { authenticateToken, requireSuperAdmin } from '../middleware/auth';
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Host registration
-router.post('/api/register', async (req, res) => {
-  try {
-    const { email, password, name, phone, address } = req.body;
-
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (existingUser) {
-      return res.status(400).json({ error: 'Email already registered' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        role: 'ADMIN',
-        name: name || null,
-        phone: phone || null,
-        address: address || null
-      }
-    });
-
-    res.status(201).json({ message: 'Host registered successfully' });
-  } catch (error) {
-    console.error('Error registering host:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 // Super-admin routes
-router.get('/api/hosts', authenticateToken, requireSuperAdmin, async (req, res) => {
+router.get('/hosts', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const hosts = await prisma.user.findMany({
       where: {
@@ -62,7 +30,7 @@ router.get('/api/hosts', authenticateToken, requireSuperAdmin, async (req, res) 
 });
 
 // Impersonate host
-router.post('/api/impersonate/:hostId', authenticateToken, requireSuperAdmin, async (req, res) => {
+router.post('/impersonate/:hostId', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { hostId } = req.params;
     const superAdminId = req.user!.userId;
@@ -106,7 +74,7 @@ router.post('/api/impersonate/:hostId', authenticateToken, requireSuperAdmin, as
 });
 
 // Delete host
-router.delete('/api/hosts/:hostId', authenticateToken, requireSuperAdmin, async (req, res) => {
+router.delete('/hosts/:hostId', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { hostId } = req.params;
 

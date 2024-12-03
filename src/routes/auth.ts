@@ -7,7 +7,14 @@ const router = Router();
 const prisma = new PrismaClient();
 
 router.post('/register', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, name, phone, address, role } = req.body;
+  console.log('[Auth Debug] Registration request received:', {
+    email,
+    name,
+    phone,
+    address,
+    role
+  });
 
   try {
     const existingUser = await prisma.user.findUnique({
@@ -15,19 +22,28 @@ router.post('/register', async (req, res) => {
     });
 
     if (existingUser) {
+      console.log('[Auth Debug] Email already registered:', email);
       return res.status(400).json({ error: 'Email already registered' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    console.log('[Auth Debug] Creating new user with role:', role);
+
     const user = await prisma.user.create({
       data: {
         email,
-        password: hashedPassword
+        password: hashedPassword,
+        name,
+        phone,
+        address,
+        role: role || 'ADMIN'
       }
     });
 
+    console.log('[Auth Debug] User created successfully:', user.id);
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
+    console.error('[Auth Debug] Registration error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -53,7 +69,7 @@ router.post('/login', async (req, res) => {
     await prisma.session.create({
       data: {
         userId: user.id,
-        token: accessToken,
+        accessToken: accessToken,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
       }
     });
@@ -71,7 +87,7 @@ router.post('/logout', async (req, res) => {
   if (accessToken) {
     try {
       await prisma.session.delete({
-        where: { token: accessToken }
+        where: { accessToken: accessToken }
       });
     } catch (error) {
       // Session might already be expired/deleted
