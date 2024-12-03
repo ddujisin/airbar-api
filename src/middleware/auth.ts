@@ -7,6 +7,8 @@ const prisma = new PrismaClient();
 interface TokenPayload {
   userId: string;
   role: string;
+  isSuperAdmin: boolean;
+  impersonatedBy?: string;
 }
 
 declare global {
@@ -23,16 +25,16 @@ export const authenticateToken = async (
   next: NextFunction
 ) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const accessToken = authHeader && authHeader.split(' ')[1];
 
-  if (!token) {
+  if (!accessToken) {
     return res.status(401).json({ error: 'Authentication required' });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as TokenPayload;
+    const decoded = jwt.verify(accessToken, process.env.JWT_SECRET!) as TokenPayload;
     const session = await prisma.session.findUnique({
-      where: { token },
+      where: { accessToken },
       include: { user: true }
     });
 
@@ -45,6 +47,13 @@ export const authenticateToken = async (
   } catch (error) {
     return res.status(403).json({ error: 'Invalid token' });
   }
+};
+
+export const requireSuperAdmin = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.user?.isSuperAdmin) {
+    return res.status(403).json({ error: 'Super admin access required' });
+  }
+  next();
 };
 
 export const authorizeRole = (roles: string[]) => {
