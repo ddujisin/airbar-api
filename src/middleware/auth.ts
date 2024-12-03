@@ -7,6 +7,8 @@ const prisma = new PrismaClient();
 interface TokenPayload {
   userId: string;
   role: string;
+  isSuperAdmin: boolean;
+  impersonatedBy?: string;
 }
 
 declare global {
@@ -45,6 +47,13 @@ export const authenticateToken = async (
   } catch (error) {
     return res.status(403).json({ error: 'Invalid token' });
   }
+};
+
+export const requireSuperAdmin = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.user?.isSuperAdmin) {
+    return res.status(403).json({ error: 'Super admin access required' });
+  }
+  next();
 };
 
 export const authorizeRole = (roles: string[]) => {
