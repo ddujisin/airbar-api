@@ -2,7 +2,7 @@ import app from './app';
 import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
 
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3003;
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 

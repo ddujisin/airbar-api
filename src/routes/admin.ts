@@ -7,6 +7,51 @@ import { authenticateToken, requireSuperAdmin } from '../middleware/auth';
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// Host registration route
+router.post('/register', async (req, res) => {
+  console.log('[Backend Debug] Starting host registration');
+  console.log('[Backend Debug] Request body:', { ...req.body, password: '[REDACTED]' });
+
+  try {
+    const { email, password, name, phone, address } = req.body;
+
+    // Check if email already exists
+    console.log('[Backend Debug] Checking for existing email:', email);
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (existingUser) {
+      console.log('[Backend Debug] Email already registered:', email);
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    // Hash password
+    console.log('[Backend Debug] Hashing password');
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new host user
+    console.log('[Backend Debug] Creating new host user');
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        role: 'ADMIN',
+        name,
+        phone,
+        address,
+        isSuperAdmin: false
+      }
+    });
+
+    console.log('[Backend Debug] Host created successfully:', { id: newUser.id, email: newUser.email });
+    res.status(201).json({ message: 'Host registered successfully' });
+  } catch (error) {
+    console.error('[Backend Debug] Error in host registration:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Super-admin routes
 router.get('/hosts', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
