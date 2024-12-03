@@ -44,8 +44,8 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const token = jwt.sign(
-      { userId: user.id, role: user.role },
+    const accessToken = jwt.sign(
+      { userId: user.id, role: user.role, isSuperAdmin: user.isSuperAdmin },
       process.env.JWT_SECRET!,
       { expiresIn: '24h' }
     );
@@ -53,12 +53,12 @@ router.post('/login', async (req, res) => {
     await prisma.session.create({
       data: {
         userId: user.id,
-        token,
+        token: accessToken,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
       }
     });
 
-    res.json({ token, role: user.role });
+    res.json({ accessToken, role: user.role, isSuperAdmin: user.isSuperAdmin });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -66,12 +66,12 @@ router.post('/login', async (req, res) => {
 
 router.post('/logout', async (req, res) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const accessToken = authHeader && authHeader.split(' ')[1];
 
-  if (token) {
+  if (accessToken) {
     try {
       await prisma.session.delete({
-        where: { token }
+        where: { token: accessToken }
       });
     } catch (error) {
       // Session might already be expired/deleted

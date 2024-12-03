@@ -23,12 +23,12 @@ model User {
 }
 
 model Session {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  accessToken String   @unique
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
 }
 
 model MenuItem {

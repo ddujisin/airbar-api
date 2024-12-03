@@ -25,16 +25,16 @@ export const authenticateToken = async (
   next: NextFunction
 ) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const accessToken = authHeader && authHeader.split(' ')[1];
 
-  if (!token) {
+  if (!accessToken) {
     return res.status(401).json({ error: 'Authentication required' });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as TokenPayload;
+    const decoded = jwt.verify(accessToken, process.env.JWT_SECRET!) as TokenPayload;
     const session = await prisma.session.findUnique({
-      where: { token },
+      where: { token: accessToken },
       include: { user: true }
     });
 
