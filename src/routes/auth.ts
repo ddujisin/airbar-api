@@ -97,4 +97,43 @@ router.post('/logout', async (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
+router.get('/verify', async (req, res) => {
+  console.log('[Auth Debug] Verify endpoint hit');
+  console.log('[Auth Debug] Headers:', req.headers);
+
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    console.log('[Auth Debug] No token provided');
+    return res.status(401).json({ valid: false, error: 'No token provided' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string; role: string; isSuperAdmin: boolean };
+
+    // Check if session exists
+    const session = await prisma.session.findUnique({
+      where: { accessToken: token },
+      include: { user: true }
+    });
+
+    if (!session || session.expiresAt < new Date()) {
+      console.log('[Auth Debug] Session not found or expired');
+      return res.status(401).json({ valid: false, error: 'Session expired' });
+    }
+
+    console.log('[Auth Debug] Token verified successfully');
+    res.json({
+      valid: true,
+      userId: decoded.userId,
+      role: decoded.role,
+      isSuperAdmin: decoded.isSuperAdmin
+    });
+  } catch (error) {
+    console.error('[Auth Debug] Token verification error:', error);
+    res.status(401).json({ valid: false, error: 'Invalid token' });
+  }
+});
+
 export default router;
