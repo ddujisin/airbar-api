@@ -50,13 +50,17 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
+  console.log('[Auth Debug] Login attempt for email:', email);
 
   try {
     const user = await prisma.user.findUnique({
       where: { email }
     });
 
+    console.log('[Auth Debug] User found:', !!user);
+
     if (!user || !await bcrypt.compare(password, user.password)) {
+      console.log('[Auth Debug] Invalid credentials');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -66,6 +70,8 @@ router.post('/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    console.log('[Auth Debug] Token generated:', accessToken.substring(0, 10) + '...');
+
     await prisma.session.create({
       data: {
         userId: user.id,
@@ -74,8 +80,10 @@ router.post('/login', async (req, res) => {
       }
     });
 
+    console.log('[Auth Debug] Session created successfully');
     res.json({ accessToken, role: user.role, isSuperAdmin: user.isSuperAdmin });
   } catch (error) {
+    console.error('[Auth Debug] Login error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
