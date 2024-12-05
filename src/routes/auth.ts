@@ -84,12 +84,13 @@ router.post('/login', async (req: AuthRequest, res) => {
       },
     });
 
-    // Set HTTP-only cookie with token
+    // Set HTTP-only cookie with token and session info
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: 24 * 60 * 60 * 1000,
-      sameSite: 'lax'
+      sameSite: 'lax',
+      path: '/'
     });
 
     console.log('[Auth Debug] Login successful:', {
@@ -128,6 +129,7 @@ router.post('/logout', async (req, res) => {
     }
   }
 
+  res.clearCookie('accessToken', { path: '/' });
   res.json({ message: 'Logged out successfully' });
 });
 
@@ -157,8 +159,7 @@ router.get('/verify', async (req, res) => {
 
     if (!session) {
       console.log('[Auth Debug] Session not found or expired');
-      res.clearCookie('accessToken');
-      res.clearCookie('sessionInfo');
+      res.clearCookie('accessToken', { path: '/' });
       return res.status(401).json({ valid: false, error: 'Session expired' } as VerifyResponse);
     }
 
@@ -171,8 +172,7 @@ router.get('/verify', async (req, res) => {
     res.json(response);
   } catch (error) {
     console.error('[Auth Debug] Token verification error:', error);
-    res.clearCookie('accessToken');
-    res.clearCookie('sessionInfo');
+    res.clearCookie('accessToken', { path: '/' });
     res.status(401).json({ valid: false, error: 'Invalid token' } as VerifyResponse);
   }
 });
