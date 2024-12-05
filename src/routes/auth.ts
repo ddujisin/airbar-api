@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { AuthRequest, LoginResponse, VerifyResponse } from './types/auth';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -48,7 +49,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', async (req: AuthRequest, res) => {
   const { email, password } = req.body;
   console.log('[Auth Debug] Login attempt:', { email, timestamp: new Date().toISOString() });
 
@@ -98,12 +99,15 @@ router.post('/login', async (req, res) => {
       timestamp: new Date().toISOString()
     });
 
-    return res.json({
+    const response: LoginResponse = {
       success: true,
       role: user.role,
       isSuperAdmin: user.isSuperAdmin,
+      valid: true,
       message: 'Login successful'
-    });
+    };
+
+    return res.json(response);
   } catch (error) {
     console.error('[Auth Debug] Login error:', error);
     return res.status(500).json({ success: false, message: 'Internal server error' });
@@ -130,12 +134,11 @@ router.post('/logout', async (req, res) => {
 router.get('/verify', async (req, res) => {
   console.log('[Auth Debug] Verify endpoint hit');
 
-  // Get token from HTTP-only cookie instead of Authorization header
   const token = req.cookies.accessToken;
 
   if (!token) {
     console.log('[Auth Debug] No token cookie found');
-    return res.status(401).json({ valid: false, error: 'No token provided' });
+    return res.status(401).json({ valid: false, error: 'No token provided' } as VerifyResponse);
   }
 
   try {
@@ -145,7 +148,6 @@ router.get('/verify', async (req, res) => {
       isSuperAdmin: boolean
     };
 
-    // Check if session exists and is not expired
     const session = await prisma.session.findFirst({
       where: {
         accessToken: token,
@@ -155,24 +157,23 @@ router.get('/verify', async (req, res) => {
 
     if (!session) {
       console.log('[Auth Debug] Session not found or expired');
-      // Clear invalid cookies
       res.clearCookie('accessToken');
       res.clearCookie('sessionInfo');
-      return res.status(401).json({ valid: false, error: 'Session expired' });
+      return res.status(401).json({ valid: false, error: 'Session expired' } as VerifyResponse);
     }
 
     console.log('[Auth Debug] Token verified successfully');
-    res.json({
+    const response: VerifyResponse = {
       valid: true,
       role: decoded.role,
       isSuperAdmin: decoded.isSuperAdmin
-    });
+    };
+    res.json(response);
   } catch (error) {
     console.error('[Auth Debug] Token verification error:', error);
-    // Clear cookies on verification failure
     res.clearCookie('accessToken');
     res.clearCookie('sessionInfo');
-    res.status(401).json({ valid: false, error: 'Invalid token' });
+    res.status(401).json({ valid: false, error: 'Invalid token' } as VerifyResponse);
   }
 });
 
