@@ -87,10 +87,11 @@ router.post('/login', async (req: AuthRequest, res) => {
     // Set HTTP-only cookie with token and session info
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Set to false in development for http
       maxAge: 24 * 60 * 60 * 1000,
       sameSite: 'lax',
-      path: '/'
+      path: '/',
+      domain: 'localhost' // Simplified domain handling for development
     });
 
     console.log('[Auth Debug] Login successful:', {
