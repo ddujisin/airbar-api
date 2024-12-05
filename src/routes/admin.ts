@@ -7,6 +7,34 @@ import { authenticateToken, requireSuperAdmin } from '../middleware/auth';
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// Dashboard stats endpoint
+router.get('/dashboard/stats', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user!.userId;
+
+    // Get counts for various entities
+    const [reservationsCount, guestsCount, itemsCount, ordersCount] = await Promise.all([
+      prisma.reservation.count({ where: { hostId: userId } }),
+      prisma.guest.count({ where: { hostId: userId } }),
+      prisma.item.count({ where: { hostId: userId } }),
+      prisma.order.count({ where: { hostId: userId } })
+    ]);
+
+    res.json({
+      success: true,
+      stats: {
+        reservations: reservationsCount,
+        guests: guestsCount,
+        items: itemsCount,
+        orders: ordersCount
+      }
+    });
+  } catch (error) {
+    console.error('[Dashboard Stats Error]:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch dashboard stats' });
+  }
+});
+
 // Host registration route
 router.post('/register', async (req, res) => {
   console.log('[Backend Debug] Starting host registration');

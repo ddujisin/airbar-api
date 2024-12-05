@@ -2,24 +2,25 @@ import app from './app';
 import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
 import dotenv from 'dotenv';
+import { WebSocket } from 'ws';
 
 // Load environment variables
 dotenv.config();
 
 console.log('[Server Debug] Environment variables loaded:', {
-  BACKEND_PORT: process.env.BACKEND_PORT,
+  PORT: process.env.PORT,
   JWT_SECRET: process.env.JWT_SECRET ? 'Set' : 'Not set',
   DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Not set'
 });
 
-const port = process.env.BACKEND_PORT || 3001;
+const port = process.env.PORT || 3001;
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws: WebSocket) => {
   console.log('Client connected');
 
-  ws.on('message', (message) => {
+  ws.on('message', (message: string) => {
     console.log('Received:', message);
   });
 

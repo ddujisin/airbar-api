@@ -50,18 +50,19 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  console.log('[Auth Debug] Login attempt for email:', email);
+  console.log('[Auth Debug] Login attempt:', { email, timestamp: new Date().toISOString() });
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      console.log('[Auth Debug] User not found:', email);
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
 
-    console.log('[Auth Debug] User found:', !!user);
-
-    if (!user || !await bcrypt.compare(password, user.password)) {
-      console.log('[Auth Debug] Invalid credentials');
-      return res.status(401).json({ error: 'Invalid credentials' });
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      console.log('[Auth Debug] Invalid password for user:', email);
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
     const accessToken = jwt.sign(
@@ -70,21 +71,42 @@ router.post('/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
-    console.log('[Auth Debug] Token generated:', accessToken.substring(0, 10) + '...');
+    // Create session record in database
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
 
     await prisma.session.create({
       data: {
         userId: user.id,
-        accessToken: accessToken,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
-      }
+        accessToken,
+        expiresAt,
+      },
     });
 
-    console.log('[Auth Debug] Session created successfully');
-    res.json({ accessToken, role: user.role, isSuperAdmin: user.isSuperAdmin });
+    // Set HTTP-only cookie with token
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000,
+      sameSite: 'lax'
+    });
+
+    console.log('[Auth Debug] Login successful:', {
+      userId: user.id,
+      role: user.role,
+      isSuperAdmin: user.isSuperAdmin,
+      timestamp: new Date().toISOString()
+    });
+
+    return res.json({
+      success: true,
+      role: user.role,
+      isSuperAdmin: user.isSuperAdmin,
+      message: 'Login successful'
+    });
   } catch (error) {
     console.error('[Auth Debug] Login error:', error);
-    res.status(500).json({ error: 'Server error' });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -107,39 +129,49 @@ router.post('/logout', async (req, res) => {
 
 router.get('/verify', async (req, res) => {
   console.log('[Auth Debug] Verify endpoint hit');
-  console.log('[Auth Debug] Headers:', req.headers);
 
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  // Get token from HTTP-only cookie instead of Authorization header
+  const token = req.cookies.accessToken;
 
   if (!token) {
-    console.log('[Auth Debug] No token provided');
+    console.log('[Auth Debug] No token cookie found');
     return res.status(401).json({ valid: false, error: 'No token provided' });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string; role: string; isSuperAdmin: boolean };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      userId: string;
+      role: string;
+      isSuperAdmin: boolean
+    };
 
-    // Check if session exists
-    const session = await prisma.session.findUnique({
-      where: { accessToken: token },
-      include: { user: true }
+    // Check if session exists and is not expired
+    const session = await prisma.session.findFirst({
+      where: {
+        accessToken: token,
+        expiresAt: { gt: new Date() }
+      }
     });
 
-    if (!session || session.expiresAt < new Date()) {
+    if (!session) {
       console.log('[Auth Debug] Session not found or expired');
+      // Clear invalid cookies
+      res.clearCookie('accessToken');
+      res.clearCookie('sessionInfo');
       return res.status(401).json({ valid: false, error: 'Session expired' });
     }
 
     console.log('[Auth Debug] Token verified successfully');
     res.json({
       valid: true,
-      userId: decoded.userId,
       role: decoded.role,
       isSuperAdmin: decoded.isSuperAdmin
     });
   } catch (error) {
     console.error('[Auth Debug] Token verification error:', error);
+    // Clear cookies on verification failure
+    res.clearCookie('accessToken');
+    res.clearCookie('sessionInfo');
     res.status(401).json({ valid: false, error: 'Invalid token' });
   }
 });

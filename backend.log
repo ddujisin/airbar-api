@@ -1,0 +1,30 @@
+
+> airbar-api@1.0.0 dev
+> ts-node-dev src/server.ts
+
+[INFO] 00:06:29 ts-node-dev ver. 2.0.0 (using ts-node ver. 10.9.2, typescript ver. 5.7.2)
+[App Debug] Environment configuration: {
+  FRONTEND_URL: undefined,
+  JWT_SECRET: 'Set',
+  DATABASE_URL: 'Set',
+  BACKEND_PORT: '3001'
+}
+[App Debug] CORS configuration: {
+  origin: 'http://localhost:3000',
+  credentials: true,
+  methods: [ 'GET', 'POST', 'PUT', 'DELETE', 'OPTIONS' ],
+  allowedHeaders: [ 'Content-Type', 'Authorization' ]
+}
+[Server Debug] Environment variables loaded: { BACKEND_PORT: '3001', JWT_SECRET: 'Set', DATABASE_URL: 'Set' }
+Error: listen EADDRINUSE: address already in use :::3001
+    at Server.setupListenHandle [as _listen2] (node:net:1904:16)
+    at listenInCluster (node:net:1961:12)
+    at Server.listen (node:net:2063:7)
+    at Object.<anonymous> (/home/ubuntu/airbar/airbar-api/src/server.ts:31:8)
+    at Module._compile (node:internal/modules/cjs/loader:1469:14)
+    at Module._compile (/home/ubuntu/airbar/airbar-api/node_modules/source-map-support/source-map-support.js:521:25)
+    at Module.m._compile (/tmp/ts-node-dev-hook-47512054175929186.js:69:33)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1548:10)
+    at require.extensions..jsx.require.extensions..js (/tmp/ts-node-dev-hook-47512054175929186.js:114:20)
+    at require.extensions.<computed> (/tmp/ts-node-dev-hook-47512054175929186.js:71:20)
+[ERROR] 00:06:35 Error: listen EADDRINUSE: address already in use :::3001
