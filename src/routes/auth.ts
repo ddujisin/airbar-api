@@ -87,11 +87,12 @@ router.post('/login', async (req: AuthRequest, res) => {
     // Set HTTP-only cookie with token and session info
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
-      secure: false, // Set to false in development for http
-      maxAge: 24 * 60 * 60 * 1000,
+      secure: false, // Set to false for http in development
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
       sameSite: 'lax',
       path: '/',
-      domain: 'localhost' // Simplified domain handling for development
+      domain: 'localhost',
+      expires: expiresAt
     });
 
     console.log('[Auth Debug] Login successful:', {
@@ -130,7 +131,12 @@ router.post('/logout', async (req, res) => {
     }
   }
 
-  res.clearCookie('accessToken', { path: '/' });
+  res.clearCookie('accessToken', {
+    path: '/',
+    domain: 'localhost',
+    httpOnly: true,
+    secure: false
+  });
   res.json({ message: 'Logged out successfully' });
 });
 
@@ -160,7 +166,12 @@ router.get('/verify', async (req, res) => {
 
     if (!session) {
       console.log('[Auth Debug] Session not found or expired');
-      res.clearCookie('accessToken', { path: '/' });
+      res.clearCookie('accessToken', {
+        path: '/',
+        domain: 'localhost',
+        httpOnly: true,
+        secure: false
+      });
       return res.status(401).json({ valid: false, error: 'Session expired' } as VerifyResponse);
     }
 
@@ -173,7 +184,12 @@ router.get('/verify', async (req, res) => {
     res.json(response);
   } catch (error) {
     console.error('[Auth Debug] Token verification error:', error);
-    res.clearCookie('accessToken', { path: '/' });
+    res.clearCookie('accessToken', {
+      path: '/',
+      domain: 'localhost',
+      httpOnly: true,
+      secure: false
+    });
     res.status(401).json({ valid: false, error: 'Invalid token' } as VerifyResponse);
   }
 });
