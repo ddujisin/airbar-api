@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const items = await prisma.item.findMany({
+    const items = await prisma.Item.findMany({
       where: { hostId: req.user!.userId }
     });
     res.json(items);
@@ -22,7 +22,7 @@ router.post('/', authenticateToken, async (req, res) => {
   const hostId = req.user!.userId;
 
   try {
-    const item = await prisma.item.create({
+    const item = await prisma.Item.create({
       data: {
         name,
         description,
@@ -43,7 +43,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
   const hostId = req.user!.userId;
 
   try {
-    const item = await prisma.item.update({
+    const item = await prisma.Item.update({
       where: {
         id,
         hostId // Ensure the item belongs to the host
@@ -66,7 +66,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   const hostId = req.user!.userId;
 
   try {
-    await prisma.item.delete({
+    await prisma.Item.delete({
       where: {
         id,
         hostId // Ensure the item belongs to the host

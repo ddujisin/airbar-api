@@ -14,10 +14,10 @@ router.get('/dashboard/stats', authenticateToken, async (req, res) => {
 
     // Get counts for various entities
     const [reservationsCount, guestsCount, itemsCount, ordersCount] = await Promise.all([
-      prisma.reservation.count({ where: { hostId: userId } }),
-      prisma.guest.count({ where: { hostId: userId } }),
-      prisma.item.count({ where: { hostId: userId } }),
-      prisma.order.count({ where: { hostId: userId } })
+      prisma.Reservation.count({ where: { hostId: userId } }),
+      prisma.Guest.count({ where: { hostId: userId } }),
+      prisma.Item.count({ where: { hostId: userId } }),
+      prisma.Order.count({ where: { hostId: userId } })
     ]);
 
     res.json({
