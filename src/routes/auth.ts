@@ -87,12 +87,10 @@ router.post('/login', async (req: AuthRequest, res) => {
     // Set HTTP-only cookie with token and session info
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
-      secure: false, // Set to false for http in development
+      secure: process.env.NODE_ENV === 'production',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       sameSite: 'lax',
-      path: '/',
-      domain: 'localhost',
-      expires: expiresAt
+      path: '/'
     });
 
     console.log('[Auth Debug] Login successful:', {
@@ -133,9 +131,8 @@ router.post('/logout', async (req, res) => {
 
   res.clearCookie('accessToken', {
     path: '/',
-    domain: 'localhost',
     httpOnly: true,
-    secure: false
+    secure: process.env.NODE_ENV === 'production'
   });
   res.json({ message: 'Logged out successfully' });
 });
@@ -168,9 +165,8 @@ router.get('/verify', async (req, res) => {
       console.log('[Auth Debug] Session not found or expired');
       res.clearCookie('accessToken', {
         path: '/',
-        domain: 'localhost',
         httpOnly: true,
-        secure: false
+        secure: process.env.NODE_ENV === 'production'
       });
       return res.status(401).json({ valid: false, error: 'Session expired' } as VerifyResponse);
     }
@@ -186,9 +182,8 @@ router.get('/verify', async (req, res) => {
     console.error('[Auth Debug] Token verification error:', error);
     res.clearCookie('accessToken', {
       path: '/',
-      domain: 'localhost',
       httpOnly: true,
-      secure: false
+      secure: process.env.NODE_ENV === 'production'
     });
     res.status(401).json({ valid: false, error: 'Invalid token' } as VerifyResponse);
   }
