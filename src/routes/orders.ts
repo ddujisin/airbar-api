@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-router.post('/', async (req, res) => {
+router.post('/', async (req: Request, res: Response) => {
   const { menuItemId, quantity, reservationId } = req.body;
 
   try {
@@ -49,7 +49,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const isAdmin = req.user?.role === 'ADMIN';
 
