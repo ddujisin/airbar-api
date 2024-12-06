@@ -47,10 +47,10 @@ app.use((req, res, next) => {
 // Public routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin/register', registrationRoutes);
+app.use('/api/menu/items', menuRoutes); // Public menu routes
 
 // Protected routes
 app.use('/api/admin', authenticateToken, adminRoutes);
-app.use('/api/menu', authenticateToken, menuRoutes);
 app.use('/api/orders', authenticateToken, orderRoutes);
 
 export default app;
