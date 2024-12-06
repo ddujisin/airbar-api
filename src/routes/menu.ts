@@ -44,14 +44,21 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // Protected routes (require authentication)
-router.post('/', authenticateToken, authorizeRole(['admin']), async (req: Request<{}, {}, CreateMenuItemBody>, res: Response) => {
+router.post('/', authenticateToken, authorizeRole(['admin']), async (req: Request, res: Response) => {
   const { name, description, price } = req.body;
+  const hostId = req.user?.userId;
+
+  if (!hostId) {
+    return res.status(401).json({ error: 'User ID not found in token' });
+  }
+
   try {
     const menuItem = await prisma.menuItem.create({
       data: {
         name,
         description,
-        price: Number(price)
+        price: Number(price),
+        hostId
       }
     });
     res.status(201).json(menuItem);
@@ -60,12 +67,21 @@ router.post('/', authenticateToken, authorizeRole(['admin']), async (req: Reques
   }
 });
 
-router.put('/:id', authenticateToken, authorizeRole(['admin']), async (req: Request<{id: string}, {}, UpdateMenuItemBody>, res: Response) => {
+router.put('/:id', authenticateToken, authorizeRole(['admin']), async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, description, price, available } = req.body;
+  const hostId = req.user?.userId;
+
+  if (!hostId) {
+    return res.status(401).json({ error: 'User ID not found in token' });
+  }
+
   try {
     const menuItem = await prisma.menuItem.update({
-      where: { id },
+      where: {
+        id,
+        hostId // Ensure users can only update their own items
+      },
       data: {
         name,
         description,
@@ -79,11 +95,20 @@ router.put('/:id', authenticateToken, authorizeRole(['admin']), async (req: Requ
   }
 });
 
-router.delete('/:id', authenticateToken, authorizeRole(['admin']), async (req: Request<{id: string}>, res: Response) => {
+router.delete('/:id', authenticateToken, authorizeRole(['admin']), async (req: Request, res: Response) => {
   const { id } = req.params;
+  const hostId = req.user?.userId;
+
+  if (!hostId) {
+    return res.status(401).json({ error: 'User ID not found in token' });
+  }
+
   try {
     await prisma.menuItem.delete({
-      where: { id }
+      where: {
+        id,
+        hostId // Ensure users can only delete their own items
+      }
     });
     res.json({ message: 'Menu item deleted successfully' });
   } catch (error) {
