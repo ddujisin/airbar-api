@@ -15,7 +15,13 @@ export type AuthenticatedRequest = Request & {
   user: TokenPayload;
 };
 
-export type AuthenticatedRequestHandler = RequestHandler<any, any, any, any, { user: TokenPayload }>;
+export type AuthenticatedRequestHandler = RequestHandler<
+  any,
+  any,
+  any,
+  any,
+  { user: TokenPayload }
+>;
 
 declare global {
   namespace Express {
