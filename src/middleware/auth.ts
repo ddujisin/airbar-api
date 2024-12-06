@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 
@@ -15,16 +15,13 @@ export type AuthenticatedRequest = Request & {
   user: TokenPayload;
 };
 
-export type AuthenticatedRequestHandler<
-  P = {},
-  ResBody = any,
-  ReqBody = any,
-  ReqQuery = any
-> = (
-  req: AuthenticatedRequest,
-  res: Response<ResBody>,
-  next?: NextFunction
-) => Promise<any> | any;
+export type AuthenticatedRequestHandler = RequestHandler<
+  any,
+  any,
+  any,
+  any,
+  AuthenticatedRequest
+>;
 
 declare global {
   namespace Express {
