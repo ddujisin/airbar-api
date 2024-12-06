@@ -1,11 +1,11 @@
-import { Router, Response, RequestHandler } from 'express';
+import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { AuthenticatedRequest, AuthenticatedRequestHandler } from '../middleware/auth';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-const createOrder: RequestHandler<{}, any, any, any> = async (req: AuthenticatedRequest, res: Response) => {
+const createOrder: AuthenticatedRequestHandler = async (req, res) => {
   const { menuItemId, quantity, reservationId } = req.body;
 
   try {
@@ -50,7 +50,7 @@ const createOrder: RequestHandler<{}, any, any, any> = async (req: Authenticated
   }
 };
 
-const getOrders: RequestHandler<{}, any, any, any> = async (req: AuthenticatedRequest, res: Response) => {
+const getOrders: AuthenticatedRequestHandler = async (req, res) => {
   const userId = req.user.userId;
   const isAdmin = req.user.role === 'ADMIN';
 
