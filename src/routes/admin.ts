@@ -146,4 +146,177 @@ router.delete('/hosts/:hostId', authenticateToken, requireSuperAdmin, async (req
   }
 });
 
+// Reservation routes
+router.get('/reservations', authenticateToken, async (req, res) => {
+  try {
+    const reservations = await prisma.reservation.findMany({
+      where: {
+        hostId: req.user.userId
+      },
+      include: {
+        guest: true,
+        orders: true
+      }
+    });
+    res.json(reservations);
+  } catch (error) {
+    console.error('Error fetching reservations:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/reservations', authenticateToken, async (req, res) => {
+  try {
+    const { startDate, endDate, guestId } = req.body;
+    const pin = Math.floor(1000 + Math.random() * 9000).toString(); // Generate 4-digit PIN
+
+    const reservation = await prisma.reservation.create({
+      data: {
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        pin,
+        hostId: req.user.userId,
+        guestId
+      },
+      include: {
+        guest: true
+      }
+    });
+    res.status(201).json(reservation);
+  } catch (error) {
+    console.error('Error creating reservation:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.get('/reservations/:id/orders', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const orders = await prisma.order.findMany({
+      where: {
+        reservationId: id,
+        reservation: {
+          hostId: req.user.userId
+        }
+      },
+      include: {
+        items: {
+          include: {
+            item: true
+          }
+        }
+      }
+    });
+    res.json(orders);
+  } catch (error) {
+    console.error('Error fetching reservation orders:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Guest routes
+router.get('/guests', authenticateToken, async (req, res) => {
+  try {
+    const guests = await prisma.guest.findMany({
+      where: {
+        hostId: req.user.userId
+      }
+    });
+    res.json(guests);
+  } catch (error) {
+    console.error('Error fetching guests:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/guests', authenticateToken, async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    const guest = await prisma.guest.create({
+      data: {
+        name,
+        email,
+        hostId: req.user.userId
+      }
+    });
+    res.status(201).json(guest);
+  } catch (error) {
+    console.error('Error creating guest:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Menu item routes
+router.get('/menu/items', authenticateToken, async (req, res) => {
+  try {
+    const items = await prisma.menuItem.findMany({
+      where: {
+        hostId: req.user.userId
+      }
+    });
+    res.json(items);
+  } catch (error) {
+    console.error('Error fetching menu items:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/menu/items', authenticateToken, async (req, res) => {
+  try {
+    const { name, description, price } = req.body;
+    const item = await prisma.menuItem.create({
+      data: {
+        name,
+        description,
+        price,
+        hostId: req.user.userId,
+        available: true
+      }
+    });
+    res.status(201).json(item);
+  } catch (error) {
+    console.error('Error creating menu item:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.put('/menu/items/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, price, available } = req.body;
+    const item = await prisma.menuItem.update({
+      where: {
+        id,
+        hostId: req.user.userId
+      },
+      data: {
+        name,
+        description,
+        price,
+        available
+      }
+    });
+    res.json(item);
+  } catch (error) {
+    console.error('Error updating menu item:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.delete('/menu/items/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.menuItem.delete({
+      where: {
+        id,
+        hostId: req.user.userId
+      }
+    });
+    res.json({ message: 'Menu item deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting menu item:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
