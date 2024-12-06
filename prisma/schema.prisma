@@ -8,18 +8,20 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
+  id           String        @id @default(uuid())
+  email        String        @unique
   password     String
-  role         String    @default("ADMIN")
-  isSuperAdmin Boolean   @default(false)
+  role         String        @default("ADMIN")
+  isSuperAdmin Boolean       @default(false)
   name         String?
   phone        String?
   address      String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  orders       Order[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   sessions     Session[]
+  menuItems    MenuItem[]
+  guests       Guest[]
+  reservations Reservation[]
 }
 
 model Session {
@@ -32,25 +34,60 @@ model Session {
 }
 
 model MenuItem {
-  id          String   @id @default(uuid())
+  id          String      @id @default(uuid())
   name        String
   description String
   price       Float
-  available   Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  orders      Order[]
+  available   Boolean     @default(true)
+  hostId      String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  orderItems  OrderItem[]
+  host        User        @relation(fields: [hostId], references: [id])
+}
+
+model Guest {
+  id           String        @id @default(uuid())
+  name         String
+  email        String
+  hostId       String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  host         User          @relation(fields: [hostId], references: [id])
+  reservations Reservation[]
+}
+
+model Reservation {
+  id        String   @id @default(uuid())
+  startDate DateTime
+  endDate   DateTime
+  pin       String
+  hostId    String
+  guestId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  host      User     @relation(fields: [hostId], references: [id])
+  guest     Guest    @relation(fields: [guestId], references: [id])
+  orders    Order[]
 }
 
 model Order {
+  id            String      @id @default(uuid())
+  reservationId String
+  status        String      @default("pending")
+  totalPrice    Float
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+  items         OrderItem[]
+}
+
+model OrderItem {
   id         String   @id @default(uuid())
-  userId     String
+  orderId    String
   menuItemId String
-  status     String   @default("pending")
   quantity   Int
-  totalPrice Float
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  price      Float
+  order      Order    @relation(fields: [orderId], references: [id])
   menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
-  user       User     @relation(fields: [userId], references: [id])
 }

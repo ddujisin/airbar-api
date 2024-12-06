@@ -1,14 +1,22 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-interface TokenPayload {
+export interface TokenPayload {
   userId: string;
   role: string;
   isSuperAdmin: boolean;
   impersonatedBy?: string;
+}
+
+export interface AuthenticatedRequest extends Request {
+  user: TokenPayload;
+}
+
+export function isAuthenticatedRequest(req: Request): req is AuthenticatedRequest {
+  return 'user' in req && req.user !== undefined;
 }
 
 declare global {
@@ -19,7 +27,7 @@ declare global {
   }
 }
 
-export const authenticateToken = async (
+export const authenticateToken: RequestHandler = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -49,16 +57,32 @@ export const authenticateToken = async (
   }
 };
 
-export const requireSuperAdmin = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.user?.isSuperAdmin) {
+// Type assertion middleware
+export const assertAuthenticated: RequestHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!isAuthenticatedRequest(req)) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  next();
+};
+
+export const requireSuperAdmin: RequestHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!isAuthenticatedRequest(req) || !req.user.isSuperAdmin) {
     return res.status(403).json({ error: 'Super admin access required' });
   }
   next();
 };
 
-export const authorizeRole = (roles: string[]) => {
+export const authorizeRole = (roles: string[]): RequestHandler => {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    if (!isAuthenticatedRequest(req) || !roles.includes(req.user.role)) {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
     next();

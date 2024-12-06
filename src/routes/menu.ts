@@ -1,14 +1,20 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { authorizeRole } from '../middleware/auth';
+import { authenticateToken } from '../middleware/auth';
+import type { AuthenticatedRequest } from '../middleware/auth';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-router.get('/', async (req, res) => {
+router.get('/', authenticateToken, async (req: Request, res: Response) => {
   try {
     const menuItems = await prisma.menuItem.findMany({
-      where: { available: true }
+      where: {
+        AND: [
+          { available: true },
+          { host: { id: (req as AuthenticatedRequest).user.userId } }
+        ]
+      }
     });
     res.json(menuItems);
   } catch (error) {
@@ -16,7 +22,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', authorizeRole(['admin']), async (req, res) => {
+router.post('/', authenticateToken, async (req: Request, res: Response) => {
   const { name, description, price } = req.body;
 
   try {
@@ -24,7 +30,9 @@ router.post('/', authorizeRole(['admin']), async (req, res) => {
       data: {
         name,
         description,
-        price
+        price: parseFloat(price),
+        host: { connect: { id: (req as AuthenticatedRequest).user.userId } },
+        available: true
       }
     });
     res.status(201).json(menuItem);
@@ -33,17 +41,20 @@ router.post('/', authorizeRole(['admin']), async (req, res) => {
   }
 });
 
-router.put('/:id', authorizeRole(['admin']), async (req, res) => {
+router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, description, price, available } = req.body;
 
   try {
     const menuItem = await prisma.menuItem.update({
-      where: { id },
+      where: {
+        id,
+        host: { id: (req as AuthenticatedRequest).user.userId }
+      },
       data: {
         name,
         description,
-        price,
+        price: parseFloat(price),
         available
       }
     });
@@ -53,12 +64,15 @@ router.put('/:id', authorizeRole(['admin']), async (req, res) => {
   }
 });
 
-router.delete('/:id', authorizeRole(['admin']), async (req, res) => {
+router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
     await prisma.menuItem.delete({
-      where: { id }
+      where: {
+        id,
+        host: { id: (req as AuthenticatedRequest).user.userId }
+      }
     });
     res.json({ message: 'Menu item deleted successfully' });
   } catch (error) {
