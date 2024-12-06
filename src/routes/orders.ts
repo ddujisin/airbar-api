@@ -1,4 +1,4 @@
-import { Router, Response } from 'express';
+import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthenticatedRequest, AuthenticatedRequestHandler } from '../middleware/auth';
 
@@ -21,7 +21,7 @@ const createOrder: AuthenticatedRequestHandler = async (req, res) => {
       data: {
         reservationId,
         totalPrice: menuItem.price * quantity,
-        orderItems: {
+        OrderItem: {
           create: {
             id: `${Date.now()}-${menuItemId}`,
             menuItemId,
@@ -31,7 +31,7 @@ const createOrder: AuthenticatedRequestHandler = async (req, res) => {
         }
       },
       include: {
-        orderItems: {
+        OrderItem: {
           include: {
             MenuItem: true
           }
@@ -58,7 +58,7 @@ const getOrders: AuthenticatedRequestHandler = async (req, res) => {
     const orders = await prisma.order.findMany({
       where: isAdmin ? {} : { Reservation: { hostId: userId } },
       include: {
-        orderItems: {
+        OrderItem: {
           include: {
             MenuItem: true
           }

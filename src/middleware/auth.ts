@@ -12,20 +12,17 @@ interface TokenPayload {
   impersonatedBy?: string;
 }
 
-export type AuthenticatedRequest = Request & {
+export interface AuthenticatedRequest extends Request {
   user: TokenPayload;
-};
+}
 
-export type AuthenticatedRequestHandler<
-  P = {},
-  ResBody = any,
-  ReqBody = any,
-  ReqQuery = qs.ParsedQs
-> = (
-  req: AuthenticatedRequest,
-  res: Response<ResBody>,
-  next: NextFunction
-) => Promise<any> | any;
+export type AuthenticatedRequestHandler = RequestHandler<
+  any,
+  any,
+  any,
+  any,
+  { user: TokenPayload }
+>;
 
 declare global {
   namespace Express {
