@@ -12,7 +12,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
       where: {
         AND: [
           { available: true },
-          { host: { id: (req as AuthenticatedRequest).user.userId } }
+          { hostId: (req as AuthenticatedRequest).user.userId }
         ]
       }
     });
@@ -31,7 +31,7 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
         name,
         description,
         price: parseFloat(price),
-        host: { connect: { id: (req as AuthenticatedRequest).user.userId } },
+        hostId: (req as AuthenticatedRequest).user.userId,
         available: true
       }
     });
@@ -49,7 +49,7 @@ router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
     const menuItem = await prisma.menuItem.update({
       where: {
         id,
-        host: { id: (req as AuthenticatedRequest).user.userId }
+        hostId: (req as AuthenticatedRequest).user.userId
       },
       data: {
         name,
@@ -71,7 +71,7 @@ router.delete('/:id', authenticateToken, async (req: Request, res: Response) => 
     await prisma.menuItem.delete({
       where: {
         id,
-        host: { id: (req as AuthenticatedRequest).user.userId }
+        hostId: (req as AuthenticatedRequest).user.userId
       }
     });
     res.json({ message: 'Menu item deleted successfully' });
