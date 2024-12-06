@@ -1,10 +1,11 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response, RequestHandler } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { AuthenticatedRequest } from '../middleware/auth';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-router.post('/', async (req: Request, res: Response) => {
+const createOrder: RequestHandler<any, any, any, any> = async (req: AuthenticatedRequest, res: Response) => {
   const { menuItemId, quantity, reservationId } = req.body;
 
   try {
@@ -47,11 +48,11 @@ router.post('/', async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
-});
+};
 
-router.get('/', async (req: Request, res: Response) => {
-  const userId = req.user!.userId;
-  const isAdmin = req.user?.role === 'ADMIN';
+const getOrders: RequestHandler<any, any, any, any> = async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user.userId;
+  const isAdmin = req.user.role === 'ADMIN';
 
   try {
     const orders = await prisma.order.findMany({
@@ -73,6 +74,9 @@ router.get('/', async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
-});
+};
+
+router.post('/', createOrder);
+router.get('/', getOrders);
 
 export default router;

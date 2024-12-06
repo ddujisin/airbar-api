@@ -11,6 +11,10 @@ interface TokenPayload {
   impersonatedBy?: string;
 }
 
+export type AuthenticatedRequest = Request & {
+  user: TokenPayload;
+};
+
 declare global {
   namespace Express {
     interface Request {
