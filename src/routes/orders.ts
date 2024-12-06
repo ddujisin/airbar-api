@@ -5,8 +5,7 @@ const router = Router();
 const prisma = new PrismaClient();
 
 router.post('/', async (req, res) => {
-  const { menuItemId, quantity } = req.body;
-  const userId = req.user!.userId;
+  const { menuItemId, quantity, reservationId } = req.body;
 
   try {
     const menuItem = await prisma.menuItem.findUnique({
@@ -19,14 +18,28 @@ router.post('/', async (req, res) => {
 
     const order = await prisma.order.create({
       data: {
-        userId,
-        menuItemId,
-        quantity,
-        totalPrice: menuItem.price * quantity
+        reservationId,
+        totalPrice: menuItem.price * quantity,
+        OrderItem: {
+          create: {
+            id: `${Date.now()}-${menuItemId}`,
+            menuItemId,
+            quantity,
+            price: menuItem.price
+          }
+        }
       },
       include: {
-        menuItem: true,
-        user: true
+        OrderItem: {
+          include: {
+            MenuItem: true
+          }
+        },
+        Reservation: {
+          include: {
+            Guest: true
+          }
+        }
       }
     });
 
@@ -38,17 +51,20 @@ router.post('/', async (req, res) => {
 
 router.get('/', async (req, res) => {
   const userId = req.user!.userId;
-  const isAdmin = req.user?.role === 'admin';
+  const isAdmin = req.user?.role === 'ADMIN';
 
   try {
     const orders = await prisma.order.findMany({
-      where: isAdmin ? {} : { userId },
+      where: isAdmin ? {} : { Reservation: { hostId: userId } },
       include: {
-        menuItem: true,
-        user: {
-          select: {
-            id: true,
-            email: true
+        OrderItem: {
+          include: {
+            MenuItem: true
+          }
+        },
+        Reservation: {
+          include: {
+            Guest: true
           }
         }
       }
