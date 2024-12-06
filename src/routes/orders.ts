@@ -21,7 +21,7 @@ const createOrder: AuthenticatedRequestHandler = async (req, res) => {
       data: {
         reservationId,
         totalPrice: menuItem.price * quantity,
-        OrderItem: {
+        orderItems: {
           create: {
             id: `${Date.now()}-${menuItemId}`,
             menuItemId,
@@ -31,7 +31,7 @@ const createOrder: AuthenticatedRequestHandler = async (req, res) => {
         }
       },
       include: {
-        OrderItem: {
+        orderItems: {
           include: {
             MenuItem: true
           }
@@ -58,7 +58,7 @@ const getOrders: AuthenticatedRequestHandler = async (req, res) => {
     const orders = await prisma.order.findMany({
       where: isAdmin ? {} : { Reservation: { hostId: userId } },
       include: {
-        OrderItem: {
+        orderItems: {
           include: {
             MenuItem: true
           }

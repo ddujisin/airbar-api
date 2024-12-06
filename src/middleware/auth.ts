@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
+import * as qs from 'qs';
 
 const prisma = new PrismaClient();
 
@@ -15,13 +16,16 @@ export type AuthenticatedRequest = Request & {
   user: TokenPayload;
 };
 
-export type AuthenticatedRequestHandler = RequestHandler<
-  any,
-  any,
-  any,
-  any,
-  AuthenticatedRequest
->;
+export type AuthenticatedRequestHandler<
+  P = {},
+  ResBody = any,
+  ReqBody = any,
+  ReqQuery = qs.ParsedQs
+> = (
+  req: AuthenticatedRequest,
+  res: Response<ResBody>,
+  next: NextFunction
+) => Promise<any> | any;
 
 declare global {
   namespace Express {
