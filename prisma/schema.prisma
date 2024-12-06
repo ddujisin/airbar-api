@@ -18,10 +18,10 @@ model User {
   address      String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  sessions     Session[]
-  menuItems    MenuItem[]
   guests       Guest[]
+  menuItems    MenuItem[]
   reservations Reservation[]
+  sessions     Session[]
 }
 
 model Session {
@@ -39,11 +39,11 @@ model MenuItem {
   description String
   price       Float
   available   Boolean     @default(true)
-  hostId      String
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-  orderItems  OrderItem[]
+  hostId      String
   host        User        @relation(fields: [hostId], references: [id])
+  orderItems  OrderItem[]
 }
 
 model Guest {
@@ -66,18 +66,18 @@ model Reservation {
   guestId   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  host      User     @relation(fields: [hostId], references: [id])
-  guest     Guest    @relation(fields: [guestId], references: [id])
   orders    Order[]
+  guest     Guest    @relation(fields: [guestId], references: [id])
+  host      User     @relation(fields: [hostId], references: [id])
 }
 
 model Order {
   id            String      @id @default(uuid())
-  reservationId String
   status        String      @default("pending")
   totalPrice    Float
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  reservationId String
   reservation   Reservation @relation(fields: [reservationId], references: [id])
   items         OrderItem[]
 }
@@ -88,6 +88,6 @@ model OrderItem {
   menuItemId String
   quantity   Int
   price      Float
-  order      Order    @relation(fields: [orderId], references: [id])
   menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  order      Order    @relation(fields: [orderId], references: [id])
 }
