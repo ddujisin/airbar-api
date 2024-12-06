@@ -47,7 +47,7 @@ app.use((req, res, next) => {
 // Public routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin/register', registrationRoutes);
-app.use('/api/menu/items', menuRoutes); // Public menu routes
+app.use('/api/menu', menuRoutes); // Public menu routes
 
 // Protected routes
 app.use('/api/admin', authenticateToken, adminRoutes);
