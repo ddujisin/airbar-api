@@ -48,9 +48,12 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/admin/register', registrationRoutes);
 
-// Protected routes
+// Protected routes at top-level
 app.use('/api/admin', authenticateToken, adminRoutes);
-app.use('/api/menu', authenticateToken, menuRoutes);
 app.use('/api/orders', authenticateToken, orderRoutes);
+
+// For menu routes, do not apply `authenticateToken` here.
+// Instead, let `menu.ts` determine which routes are protected and which are public.
+app.use('/api/menu', menuRoutes);
 
 export default app;
