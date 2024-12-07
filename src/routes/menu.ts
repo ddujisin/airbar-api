@@ -80,4 +80,22 @@ router.delete('/:id', authenticateToken, async (req: Request, res: Response) => 
   }
 });
 
+router.get('/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const menuItem = await prisma.menuItem.findUnique({
+      where: { id },
+    });
+
+    if (!menuItem) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    res.json(menuItem);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 export default router;
