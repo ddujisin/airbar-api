@@ -12,7 +12,7 @@ console.log('[Server Debug] Environment variables loaded:', {
   DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Not set'
 });
 
-const port = process.env.BACKEND_PORT || 3001;
+const port = process.env.PORT || 3001;
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
