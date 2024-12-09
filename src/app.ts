@@ -1,12 +1,14 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/auth';
 import menuRoutes from './routes/menu';
 import orderRoutes from './routes/orders';
 import adminRoutes from './routes/admin';
 import registrationRoutes from './routes/registration';
 import { authenticateToken } from './middleware/auth';
+import { Router } from 'express';
 
 // Load environment variables
 dotenv.config();
@@ -19,6 +21,7 @@ console.log('[App Debug] Environment configuration:', {
 });
 
 const app = express();
+const prisma = new PrismaClient();
 
 // Configure CORS
 const corsOptions = {
@@ -44,9 +47,31 @@ app.use((req, res, next) => {
   next();
 });
 
+// Split menu routes into public and protected
+const publicMenuRouter = Router();
+publicMenuRouter.get('/items/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const menuItem = await prisma.menuItem.findUnique({
+      where: {
+        id,
+        available: true
+      }
+    });
+    if (!menuItem) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+    res.json(menuItem);
+  } catch (error) {
+    console.error('Error fetching menu item:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Public routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin/register', registrationRoutes);
+app.use('/api/public/menu', publicMenuRouter);
 
 // Protected routes
 app.use('/api/admin', authenticateToken, adminRoutes);

@@ -144,4 +144,48 @@ router.get('/verify', async (req, res) => {
   }
 });
 
+router.get('/pin/:pin', async (req, res) => {
+  const { pin } = req.params;
+  console.log('[Auth Debug] PIN validation attempt:', pin);
+
+  try {
+    // Find reservation with matching PIN
+    const reservation = await prisma.reservation.findFirst({
+      where: { pin: pin }
+    });
+
+    if (!reservation) {
+      console.log('[Auth Debug] Invalid PIN:', pin);
+      return res.status(401).json({ error: 'Invalid PIN code' });
+    }
+
+    // Generate guest token
+    const accessToken = jwt.sign(
+      {
+        userId: reservation.hostId,
+        role: 'GUEST',
+        isSuperAdmin: false,
+        reservationId: reservation.id
+      },
+      process.env.JWT_SECRET!,
+      { expiresIn: '24h' }
+    );
+
+    // Create session for guest
+    await prisma.session.create({
+      data: {
+        userId: reservation.hostId,
+        accessToken: accessToken,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      }
+    });
+
+    console.log('[Auth Debug] Guest token generated for reservation:', reservation.id);
+    res.json({ accessToken });
+  } catch (error) {
+    console.error('[Auth Debug] PIN validation error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 export default router;
