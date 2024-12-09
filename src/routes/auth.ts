@@ -144,4 +144,58 @@ router.get('/verify', async (req, res) => {
   }
 });
 
+//Route for pin-based guest login
+router.get('/pin/:pin', async (req, res) => {
+  const { pin } = req.params;
+  console.log('[Auth Debug] PIN verification attempt:', pin);
+
+  try {
+    const now = new Date();
+    const reservation = await prisma.reservation.findFirst({
+      where: {
+        pin,
+        startDate: { lte: now },
+        endDate: { gte: now }
+      },
+      include: { host: true }
+    });
+
+    if (!reservation) {
+      console.log('[Auth Debug] No valid reservation found for pin:', pin);
+      return res.status(401).json({ error: 'Invalid or expired PIN' });
+    }
+
+    // Create a guest token
+    const accessToken = jwt.sign(
+      {
+        userId: reservation.hostId, // We'll use the host's userId since sessions must reference a user
+        role: 'GUEST',
+        isSuperAdmin: false,
+        reservationId: reservation.id
+      },
+      process.env.JWT_SECRET!,
+      { expiresIn: '24h' }
+    );
+
+    await prisma.session.create({
+      data: {
+        userId: reservation.hostId,
+        accessToken: accessToken,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      }
+    });
+
+    console.log('[Auth Debug] Guest session created successfully for reservation:', reservation.id);
+    res.json({
+      accessToken,
+      role: 'GUEST',
+      reservationId: reservation.id,
+      message: 'PIN validated successfully, guest session started'
+    });
+  } catch (error) {
+    console.error('[Auth Debug] PIN verification error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 export default router;
