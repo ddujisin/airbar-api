@@ -6,6 +6,26 @@ import type { AuthenticatedRequest } from '../middleware/auth';
 const router = Router();
 const prisma = new PrismaClient();
 
+// Public routes
+router.get('/public/items/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const menuItem = await prisma.menuItem.findUnique({
+      where: {
+        id,
+        available: true
+      }
+    });
+    if (!menuItem) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+    res.json(menuItem);
+  } catch (error) {
+    console.error('Error fetching menu item:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 router.get('/', authenticateToken, async (req: Request, res: Response) => {
   try {
     const menuItems = await prisma.menuItem.findMany({
