@@ -29,16 +29,16 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
 
     for (const item of items) {
       const menuItem = await prisma.menuItem.findUnique({
-        where: { id: item.menuItemId }
+        where: { id: item.itemId }
       });
 
       if (!menuItem || !menuItem.available) {
-        return res.status(400).json({ error: `Menu item ${item.menuItemId} not available` });
+        return res.status(400).json({ error: `Menu item ${item.itemId} not available` });
       }
 
       totalPrice += menuItem.price * item.quantity;
       orderItems.push({
-        menuItemId: item.menuItemId,
+        menuItemId: item.itemId,
         quantity: item.quantity,
         price: menuItem.price
       });

@@ -2,6 +2,13 @@ import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+interface DecodedToken {
+  userId: string;
+  role: string;
+  isSuperAdmin: boolean;
+  impersonatedBy?: string;
+}
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -118,7 +125,7 @@ router.get('/verify', async (req, res) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string; role: string; isSuperAdmin: boolean };
+    const decoded = jwt.verify(token, JWT_SECRET) as DecodedToken;
 
     // Check if session exists
     const session = await prisma.session.findUnique({
@@ -131,16 +138,28 @@ router.get('/verify', async (req, res) => {
       return res.status(401).json({ valid: false, error: 'Session expired' });
     }
 
-    console.log('[Auth Debug] Token verified successfully');
+    const { user } = session;
+
+    // Build a user object that the frontend expects
+    const responseUser = {
+      id: user.id,
+      email: user.email,
+      name: user.name || '',
+      phone: user.phone || '',
+      address: user.address || '',
+      role: decoded.role,          // Use the role from the token
+      isSuperAdmin: decoded.isSuperAdmin
+    };
+
+    console.log('[Auth Debug] Token verified successfully, returning user:', responseUser);
     res.json({
       valid: true,
-      userId: decoded.userId,
-      role: decoded.role,
-      isSuperAdmin: decoded.isSuperAdmin
+      user: responseUser
     });
+
   } catch (error) {
     console.error('[Auth Debug] Token verification error:', error);
-    res.status(401).json({ valid: false, error: 'Invalid token' });
+    return res.status(401).json({ valid: false, error: 'Invalid token' });
   }
 });
 
@@ -190,6 +209,8 @@ router.get('/pin/:pin', async (req, res) => {
       accessToken,
       role: 'GUEST',
       reservationId: reservation.id,
+      guestId: reservation.guestId,
+      hostId: reservation.hostId,
       message: 'PIN validated successfully, guest session started'
     });
   } catch (error) {
