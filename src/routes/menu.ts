@@ -6,6 +6,27 @@ import type { AuthenticatedRequest } from '../middleware/auth';
 const router = Router();
 const prisma = new PrismaClient();
 
+// Public route for retrieving individual menu items (for QR code scanning)
+router.get('/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    console.log('Fetching menu item with ID:', id);
+    const menuItem = await prisma.menuItem.findUnique({
+      where: { id }
+    });
+    if (!menuItem) {
+      console.log('Menu item not found:', id);
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+    console.log('Successfully retrieved menu item:', menuItem);
+    res.json(menuItem);
+  } catch (error) {
+    console.error('Error fetching menu item:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Protected routes that require authentication
 router.get('/', authenticateToken, async (req: Request, res: Response) => {
   try {
     const menuItems = await prisma.menuItem.findMany({
@@ -75,22 +96,6 @@ router.delete('/:id', authenticateToken, async (req: Request, res: Response) => 
       }
     });
     res.json({ message: 'Menu item deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Public route for retrieving individual menu items (for QR code scanning)
-router.get('/:id', async (req: Request, res: Response) => {
-  const { id } = req.params;
-  try {
-    const menuItem = await prisma.menuItem.findUnique({
-      where: { id }
-    });
-    if (!menuItem) {
-      return res.status(404).json({ error: 'Menu item not found' });
-    }
-    res.json(menuItem);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
